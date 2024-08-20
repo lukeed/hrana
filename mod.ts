@@ -97,3 +97,74 @@ export class Client {
 		return batch(this.#c, ...steps);
 	}
 }
+
+export type Row = Record<string, unknown>;
+export type Mode = 'number' | 'bigint' | 'string';
+
+export function parse<T extends Row = Row>(result: t.StmtResult, mode?: Mode): T[] {
+	let { cols, rows } = result;
+	let i = 0, len = cols.length;
+	let k = 0, klen = cols.length;
+	let row: Row, tmp: t.Value[];
+	let c: t.Col, v: t.Value;
+
+	let output = Array<Row>(len);
+
+	for (; i < len; i++) {
+		row = {};
+		tmp = rows[i];
+
+		for (k = 0; k < klen; k++) {
+			c = cols[k];
+			if (c.name) {
+				v = tmp[k];
+				if (c.decltype) {
+					v.type = c.decltype as t.Value['type'];
+				}
+				row[c.name] = value(v, mode);
+			}
+		}
+
+		output.push(row);
+	}
+
+	return output as T[];
+}
+
+export function value(raw: t.Value, mode?: Mode) {
+	switch (raw.type) {
+		case 'null':
+			return null;
+
+		case 'text':
+			return raw.value;
+
+		case 'float':
+			return +raw.value;
+
+		case 'integer': {
+			if (!mode || mode === 'number') {
+				return +raw.value; // mode (int)
+			}
+
+			if (mode === 'bigint') {
+				return BigInt(raw.value);
+			}
+
+			return raw.value;
+		}
+
+		case 'blob':
+			return decode(raw.base64);
+	}
+}
+
+function decode(b64: string): Uint8Array {
+	let bin = atob(b64);
+	let i = 0, size = bin.length;
+	let bytes = new Uint8Array(size);
+	for (; i < size; i++) {
+		bytes[i] = bin.charCodeAt(i);
+	}
+	return bytes;
+}

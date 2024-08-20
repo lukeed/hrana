@@ -142,9 +142,9 @@ export type Config = {
 	fetch?: typeof globalThis.fetch;
 };
 
-async function pipeline<T extends StreamResponse>(c: Config, input: PipelineReqBody): Promise<
-	PipelineRespBody<T> | undefined
-> {
+async function pipeline<
+	T extends BatchResult | StmtResult,
+>(c: Config, input: PipelineReqBody): Promise<T | undefined> {
 	let method = 'POST';
 	let headers = new Headers();
 	let body: BodyInit | null = null;
@@ -158,8 +158,10 @@ async function pipeline<T extends StreamResponse>(c: Config, input: PipelineReqB
 		headers.set('Content-Type', 'application/json');
 	}
 
+	type Reply = ExecuteStreamResp | BatchStreamResp;
 	let r = await request(c, '/v3/pipeline', { method, body, headers });
-	if (r.ok) return r.json() as Promise<PipelineRespBody<T>>;
+	let reply = r.ok && (await r.json() as PipelineRespBody<Reply>).results[0];
+	if (reply && reply.type === 'ok') return reply.response.result as T;
 }
 
 function request(c: Config, path: `/${string}`, init?: RequestInit) {
@@ -172,8 +174,8 @@ function request(c: Config, path: `/${string}`, init?: RequestInit) {
 	return (c.fetch || fetch)(c.url + path, init);
 }
 
-export async function execute(config: Config, query: Stmt): Promise<StmtResult | undefined> {
-	let reply = await pipeline<ExecuteStreamResp>(config, {
+export function execute(config: Config, query: Stmt): Promise<StmtResult | undefined> {
+	return pipeline<StmtResult>(config, {
 		baton: null,
 		requests: [{
 			type: 'execute',
@@ -182,33 +184,18 @@ export async function execute(config: Config, query: Stmt): Promise<StmtResult |
 			type: 'close',
 		}],
 	});
-
-	let result = reply && reply.results[0];
-	if (result && result.type === 'ok') {
-		return result.response.result;
-	}
 }
 
-export async function batch(
-	config: Config,
-	...steps: BatchStep[]
-): Promise<BatchResult | undefined> {
-	let reply = await pipeline<BatchStreamResp>(config, {
+export function batch(config: Config, ...steps: BatchStep[]): Promise<BatchResult | undefined> {
+	return pipeline<BatchResult>(config, {
 		baton: null,
 		requests: [{
 			type: 'batch',
-			batch: {
-				steps,
-			},
+			batch: { steps },
 		}, {
 			type: 'close',
 		}],
 	});
-
-	let result = reply && reply.results[0];
-	if (result && result.type === 'ok') {
-		return result.response.result;
-	}
 }
 
 // https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#check-support-for-version-3-json

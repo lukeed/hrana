@@ -131,6 +131,15 @@ export function parse<T extends Row = Row>(result: t.StmtResult, mode?: Mode): T
 	return output as T[];
 }
 
+export function value(raw: t.Value.Null): null;
+export function value(raw: t.Value.Text): string;
+export function value(raw: t.Value.Blob): Uint8Array;
+export function value(raw: t.Value.Float): number;
+export function value(raw: t.Value.Integer): number;
+export function value(raw: t.Value.Integer, mode: 'number'): number;
+export function value(raw: t.Value.Integer, mode: 'string'): string;
+export function value(raw: t.Value.Integer, mode: 'bigint'): bigint;
+export function value(raw: t.Value, mode?: Mode): string | number | bigint | Uint8Array | null;
 export function value(raw: t.Value, mode?: Mode) {
 	switch (raw.type) {
 		case 'null':

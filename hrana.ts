@@ -3,11 +3,38 @@ type uint64 = number;
 type double = number;
 
 export type Value =
-	| { type: 'null' }
-	| { type: 'integer'; value: string }
-	| { type: 'float'; value: number }
-	| { type: 'text'; value: string }
-	| { type: 'blob'; base64: string };
+	| Value.Text
+	| Value.Float
+	| Value.Integer
+	| Value.Blob
+	| Value.Null;
+
+// deno-lint-ignore no-namespace
+export namespace Value {
+	export type Text = {
+		type: 'text';
+		value: string;
+	};
+
+	export type Null = {
+		type: 'null';
+	};
+
+	export type Float = {
+		type: 'float';
+		value: number;
+	};
+
+	export type Integer = {
+		type: 'integer';
+		value: string;
+	};
+
+	export type Blob = {
+		type: 'blob';
+		base64: string;
+	};
+}
 
 export type Stmt = {
 	sql: string;

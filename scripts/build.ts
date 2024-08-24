@@ -1,8 +1,8 @@
 import { join, resolve } from 'jsr:@std/path@^1.0';
 import oxc from 'npm:oxc-transform@^0.23';
 
-const bytes = 0;
-const NAME = 'libsql';
+const bytes = 770;
+const NAME = '@lukeed/libsql';
 
 const version = Deno.args[0];
 console.log('? version:', version);
@@ -31,7 +31,7 @@ function bail(label: string, errors: string[]): never {
 // build "/jsr.json" file
 // @see https://jsr.io/schema/config-file.v1.json
 let jsr = {
-	name: '@lukeed/${NAME}',
+	name: NAME,
 	version: version,
 	exports: {
 		'.': './mod.ts',
@@ -84,8 +84,8 @@ await Deno.writeTextFile(outfile, dts.sourceText);
 let pkg = {
 	name: NAME,
 	version: version,
-	repository: `lukeed/${NAME}`,
-	description: `A tiny (${bytes}b) utility to build JSON schema types.`,
+	repository: 'lukeed/libsql',
+	description: `A tiny (${bytes}b) hrana client`,
 	module: 'index.mjs',
 	types: 'index.d.ts',
 	type: 'module',
@@ -108,12 +108,11 @@ let pkg = {
 		node: '>=14',
 	},
 	keywords: [
-		'infer json schema',
-		'json schema builder',
-		'object schema',
-		'typed schema',
-		'typecheck',
-		'validate',
+		'hrana',
+		'libsql',
+		'sqlite',
+		'turso',
+		'http',
 	],
 };
 

@@ -103,7 +103,7 @@ export type Mode = 'number' | 'bigint' | 'string';
 
 export function parse<T extends Row = Row>(result: t.StmtResult, mode?: Mode): T[] {
 	let { cols, rows } = result;
-	let i = 0, len = cols.length;
+	let i = 0, len = rows.length;
 	let k = 0, klen = cols.length;
 	let row: Row, tmp: t.Value[];
 	let c: t.Col, v: t.Value;
@@ -125,7 +125,7 @@ export function parse<T extends Row = Row>(result: t.StmtResult, mode?: Mode): T
 			}
 		}
 
-		output.push(row);
+		output[i] = row;
 	}
 
 	return output as T[];

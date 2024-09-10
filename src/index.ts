@@ -93,21 +93,21 @@ export function supports(config: Config): Promise<boolean> {
 	return request(config, '/v3').then((r) => r.ok);
 }
 
-export class Client {
-	#c: Config;
+// export class Client {
+// 	#c: Config;
 
-	constructor(config: Config) {
-		this.#c = config;
-	}
+// 	constructor(config: Config) {
+// 		this.#c = config;
+// 	}
 
-	execute(query: t.Stmt): Promise<t.StmtResult | undefined> {
-		return execute(this.#c, query);
-	}
+// 	execute(query: t.Stmt): Promise<t.StmtResult | undefined> {
+// 		return execute(this.#c, query);
+// 	}
 
-	batch(...steps: t.BatchStep[]): Promise<t.BatchResult | undefined> {
-		return batch(this.#c, ...steps);
-	}
-}
+// 	batch(...steps: t.BatchStep[]): Promise<t.BatchResult | undefined> {
+// 		return batch(this.#c, ...steps);
+// 	}
+// }
 
 /**
  * Parsing options for "integer" values.

@@ -1,5 +1,4 @@
 {
-	"version": "0.0.0",
 	"tasks": {
 		"spec": "deno run -A scripts/spec.ts",
 		"build": "deno run -A scripts/build.ts",

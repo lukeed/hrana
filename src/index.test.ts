@@ -2,7 +2,7 @@ import { assertEquals } from 'jsr:@std/assert@^1';
 import { encodeBase64 } from 'jsr:@std/encoding@^1/base64';
 import { encodeBase64Url } from 'jsr:@std/encoding@^1/base64url';
 
-import * as mod from './mod.ts';
+import * as mod from './index.ts';
 import type { StmtResult, Value } from './hrana.ts';
 
 Deno.test('value', async (t) => {

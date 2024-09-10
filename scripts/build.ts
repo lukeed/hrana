@@ -1,26 +1,26 @@
-import { join, resolve } from 'jsr:@std/path@^1.0';
-import oxc from 'npm:oxc-transform@^0.23';
+import { existsSync } from 'node:fs';
+import { basename, join, resolve } from 'node:path';
 
-const bytes = 770;
-const NAME = '@lukeed/libsql';
+import oxc from 'npm:oxc-transform@^0.27';
+import { minify } from 'npm:terser@5.32.0';
+
+const Quiet = Deno.args.includes('--quiet');
 
 const version = Deno.args[0];
 console.log('? version:', version);
 
-async function exists(path: string) {
-	try {
-		await Deno.lstat(path);
-		return true;
-	} catch {
-		return false;
-	}
-}
+// build "jsr.json" file
+// @see https://jsr.io/schema/config-file.v1.json
+let jsr = {
+	version: version,
+	name: '@lukeed/hrana',
+	exports: {
+		'.': './index.ts',
+	},
+};
 
-async function copy(file: string) {
-	if (await exists(file)) {
-		console.log('> writing "%s" file', file);
-		return Deno.copyFile(file, join(outdir, file));
-	}
+function log(...args: unknown[]) {
+	Quiet || console.log(...args);
 }
 
 function bail(label: string, errors: string[]): never {
@@ -28,97 +28,101 @@ function bail(label: string, errors: string[]): never {
 	Deno.exit(1);
 }
 
-// build "/jsr.json" file
-// @see https://jsr.io/schema/config-file.v1.json
-let jsr = {
-	name: NAME,
-	version: version,
-	exports: {
-		'.': './mod.ts',
-	},
-	publish: {
-		include: [
-			'*.ts',
-			'license',
-			'readme.md',
-		],
-		exclude: [
-			'*.test.ts',
-		],
-	},
-};
+function write(file: string, text: string) {
+	log('  +', basename(file));
+	return Deno.writeTextFile(file, text);
+}
 
-let outfile = resolve('jsr.json');
-console.log('> writing "jsr.json" file');
-await Deno.writeTextFile(outfile, JSON.stringify(jsr, null, 2));
+function copy(file: string) {
+	let input = resolve(file);
+	if (existsSync(input)) {
+		let filename = basename(input);
+		let output = join(outdir, filename);
+
+		log('  +', filename);
+		return Deno.copyFile(input, output);
+	}
+}
+
+async function transform(file: string) {
+	let entry = resolve(file);
+	let filename = basename(entry);
+	let source = await Deno.readTextFile(entry);
+
+	let xform = oxc.transform(entry, source, {
+		typescript: {
+			onlyRemoveTypeImports: true,
+			declaration: true,
+		},
+	});
+
+	if (xform.errors.length > 0) {
+		bail('transform', xform.errors);
+	}
+
+	let rgx = /\.tsx?$/;
+	let esm = filename.replace(rgx, '.mjs');
+	let dts = filename.replace(rgx, '.d.mts');
+
+	let outfile = join(outdir, dts);
+	await write(outfile, xform.declaration!);
+
+	outfile = join(outdir, esm);
+	await write(outfile, xform.code);
+
+	try {
+		let min = await minify(xform.code, {
+			ecma: 2020,
+			mangle: true,
+			compress: true,
+			toplevel: true,
+			module: true,
+		});
+		if (!min.code) throw 1;
+
+		log('::notice::%s (%d b)', esm, min.code.length);
+	} catch (err) {
+		bail('terser', err);
+	}
+}
+
+// --- JSR ---
+
+let outdir = resolve('jsr');
+let outfile = join(outdir, 'jsr.json');
+
+if (existsSync(outdir)) {
+	console.log('! removing "jsr" directory');
+	await Deno.remove(outdir, { recursive: true });
+}
+
+await Deno.mkdir(outdir);
+log('jsr/');
+
+await copy('src/index.ts');
+await copy('src/hrana.ts');
+await copy('readme.md');
+await copy('license');
+
+await write(outfile, JSON.stringify(jsr, null, 2));
 
 // build "/npm" package
 // ---
 
-let outdir = resolve('npm');
+outdir = resolve('npm');
 
-if (await exists(outdir)) {
+if (existsSync(outdir)) {
 	console.log('! removing "npm" directory');
 	await Deno.remove(outdir, { recursive: true });
 }
 
 await Deno.mkdir(outdir);
+log('npm/');
 
-let entry = resolve('mod.ts');
-let source = await Deno.readTextFile(entry);
-
-let esm = oxc.transform(entry, source);
-if (esm.errors.length > 0) bail('transform', esm.errors);
-
-outfile = join(outdir, 'index.mjs');
-console.log('> writing "index.mjs" file');
-await Deno.writeTextFile(outfile, esm.sourceText);
-
-let dts = oxc.isolatedDeclaration(entry, source);
-if (dts.errors.length > 0) bail('dts', dts.errors);
-
-outfile = join(outdir, 'index.d.ts');
-console.log('> writing "index.d.ts" file');
-await Deno.writeTextFile(outfile, dts.sourceText);
-
-let pkg = {
-	name: NAME,
-	version: version,
-	repository: 'lukeed/libsql',
-	description: `A tiny (${bytes}b) hrana client`,
-	module: 'index.mjs',
-	types: 'index.d.ts',
-	type: 'module',
-	license: 'MIT',
-	exports: {
-		'.': {
-			import: {
-				types: './index.d.ts',
-				default: './index.mjs',
-			},
-		},
-		'./package.json': './package.json',
-	},
-	author: {
-		name: 'Luke Edwards',
-		email: 'luke.edwards05@gmail.com',
-		url: 'https://lukeed.com',
-	},
-	engines: {
-		node: '>=14',
-	},
-	keywords: [
-		'hrana',
-		'libsql',
-		'sqlite',
-		'turso',
-		'http',
-	],
-};
-
-outfile = join(outdir, 'package.json');
-console.log('> writing "package.json" file');
-await Deno.writeTextFile(outfile, JSON.stringify(pkg, null, 2));
-
+await copy('package.json');
 await copy('readme.md');
 await copy('license');
+
+await copy('src/hrana.ts');
+
+await transform('src/index.ts');

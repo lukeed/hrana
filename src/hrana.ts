@@ -36,6 +36,11 @@ export namespace Value {
 	};
 }
 
+type Error = {
+	message: string;
+	code?: string | null;
+};
+
 export type Stmt = {
 	sql: string;
 	args?: Value[];
@@ -111,7 +116,7 @@ export type ExecuteStreamResp = {
 
 export type StmtResult = {
 	cols: Array<Col>;
-	rows: Array<Array<Value>>;
+	rows: Array<Value[]>;
 	affected_row_count: uint64;
 	last_insert_rowid: string | null;
 	rows_read: uint64;

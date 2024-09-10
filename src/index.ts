@@ -23,7 +23,7 @@ export type Config = {
 
 async function pipeline<
 	T extends t.BatchResult | t.StmtResult,
->(c: Config, input: t.PipelineReqBody): Promise<T | undefined> {
+>(c: Config, input: t.PipelineReqBody): Promise<T> {
 	let method = 'POST';
 	let headers = new Headers();
 	let body: BodyInit | null = null;
@@ -37,10 +37,16 @@ async function pipeline<
 		headers.set('Content-Type', 'application/json');
 	}
 
-	type Reply = t.ExecuteStreamResp | t.BatchStreamResp;
 	let r = await request(c, '/v3/pipeline', { method, body, headers });
-	let reply = r.ok && (await r.json() as t.PipelineRespBody<Reply>).results[0];
-	if (reply && reply.type === 'ok') return reply.response.result as T;
+	if (!r.ok) throw r;
+
+	type Reply = t.ExecuteStreamResp | t.BatchStreamResp;
+	let reply = (await r.json() as t.PipelineRespBody<Reply>).results[0];
+	if (reply.type === 'ok') return reply.response.result as T;
+
+	let err = new Error(reply.error.message);
+	(err as any).code = reply.error.code;
+	throw err;
 }
 
 function request(c: Config, path: `/${string}`, init?: RequestInit) {
@@ -55,8 +61,12 @@ function request(c: Config, path: `/${string}`, init?: RequestInit) {
 
 /**
  * Execute a single statement.
+ *
+ * > [!NOTE]
+ * > Throws an `Error` for pipeline statement errors.
+ * > Throws the `Response` for non-2xx status codes (eg, Authorization issues).
  */
-export function execute(config: Config, query: t.Stmt): Promise<t.StmtResult | undefined> {
+export function execute(config: Config, query: t.Stmt): Promise<t.StmtResult> {
 	return pipeline<t.StmtResult>(config, {
 		baton: null,
 		requests: [{
@@ -72,8 +82,12 @@ export function execute(config: Config, query: t.Stmt): Promise<t.StmtResult | u
  * Execute a batch of statements, which will be executed sequentially.
  *
  * If the condition of a step is present and evaluates to false, the statement is not executed.
+ *
+ * > [!NOTE]
+ * > Throws an `Error` for pipeline statement errors.
+ * > Throws the `Response` for non-2xx status codes (eg, Authorization issues).
  */
-export function batch(config: Config, ...steps: t.BatchStep[]): Promise<t.BatchResult | undefined> {
+export function batch(config: Config, ...steps: t.BatchStep[]): Promise<t.BatchResult> {
 	return pipeline<t.BatchResult>(config, {
 		baton: null,
 		requests: [{

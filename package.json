@@ -3,7 +3,7 @@
 	"type": "module",
 	"version": "0.0.0",
 	"repository": "lukeed/hrana",
-	"description": "A tiny (693b) runtime-agnostic Hrana HTTP client",
+	"description": "A tiny (729b) runtime-agnostic Hrana HTTP client",
 	"module": "index.mjs",
 	"types": "index.d.ts",
 	"license": "MIT",

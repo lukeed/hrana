@@ -10,6 +10,7 @@
 				"no-var",
 				"prefer-const",
 				"no-cond-assign",
+				"no-explicit-any",
 				"no-inner-declarations"
 			]
 		}

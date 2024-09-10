@@ -53,6 +53,9 @@ function request(c: Config, path: `/${string}`, init?: RequestInit) {
 	return (c.fetch || fetch)(c.url + path, init);
 }
 
+/**
+ * Execute a single statement.
+ */
 export function execute(config: Config, query: t.Stmt): Promise<t.StmtResult | undefined> {
 	return pipeline<t.StmtResult>(config, {
 		baton: null,
@@ -65,6 +68,11 @@ export function execute(config: Config, query: t.Stmt): Promise<t.StmtResult | u
 	});
 }
 
+/**
+ * Execute a batch of statements, which will be executed sequentially.
+ *
+ * If the condition of a step is present and evaluates to false, the statement is not executed.
+ */
 export function batch(config: Config, ...steps: t.BatchStep[]): Promise<t.BatchResult | undefined> {
 	return pipeline<t.BatchResult>(config, {
 		baton: null,
@@ -77,7 +85,10 @@ export function batch(config: Config, ...steps: t.BatchStep[]): Promise<t.BatchR
 	});
 }
 
-// https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#check-support-for-version-3-json
+/**
+ * Check if the server supports Hrana V3 over HTTP with JSON encoding.
+ * @see https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#check-support-for-version-3-json
+ */
 export function supports(config: Config): Promise<boolean> {
 	return request(config, '/v3').then((r) => r.ok);
 }
@@ -98,9 +109,26 @@ export class Client {
 	}
 }
 
-export type Row = Record<string, unknown>;
+/**
+ * Parsing options for "integer" values.
+ * @default "number"
+ * @see https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#values
+ */
 export type Mode = 'number' | 'bigint' | 'string';
 
+/**
+ * The parsed Row type.
+ */
+export type Row = {
+	[column: string]: unknown;
+};
+
+/**
+ * Parse all Rows from the statement results.
+ *
+ * @param result The statement results.
+ * @param mode The {@link Mode} for "integer" column parsing; default="number"
+ */
 export function parse<T extends Row = Row>(result: t.StmtResult, mode?: Mode): T[] {
 	let { cols, rows } = result;
 	let i = 0, len = rows.length;
@@ -131,6 +159,12 @@ export function parse<T extends Row = Row>(result: t.StmtResult, mode?: Mode): T
 	return output as T[];
 }
 
+/**
+ * Parse a column's value.
+ *
+ * @param raw The value to parse.
+ * @param mode The integer {@link Mode}; default="number"
+ */
 export function value(raw: t.Value.Null): null;
 export function value(raw: t.Value.Text): string;
 export function value(raw: t.Value.Blob): Uint8Array;

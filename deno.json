@@ -20,9 +20,8 @@
 		"useTabs": true
 	},
 	"exclude": [
+		"build",
 		"coverage",
-		"readme.md",
-		"jsr",
-		"npm"
+		"readme.md"
 	]
 }

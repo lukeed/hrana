@@ -52,6 +52,18 @@ function copy(file: string) {
 	}
 }
 
+async function reset(target: string) {
+	let name = basename(target);
+
+	if (existsSync(target)) {
+		console.log('! removing "%s" directory', name);
+		await Deno.remove(outdir, { recursive: true });
+	}
+
+	await Deno.mkdir(outdir, { recursive: true });
+	log('%s/', name);
+}
+
 async function transform(file: string) {
 	let entry = resolve(file);
 	let filename = basename(entry);
@@ -115,16 +127,10 @@ async function gzip(raw: string) {
 
 // --- JSR ---
 
-let outdir = resolve('jsr');
+let outdir = resolve('build/jsr');
 let outfile = join(outdir, 'jsr.json');
 
-if (existsSync(outdir)) {
-	console.log('! removing "jsr" directory');
-	await Deno.remove(outdir, { recursive: true });
-}
-
-await Deno.mkdir(outdir);
-log('jsr/');
+await reset(outdir);
 
 await copy('src/index.ts');
 await copy('src/hrana.ts');
@@ -136,20 +142,12 @@ await write(outfile, JSON.stringify(jsr, null, 2));
 // build "/npm" package
 // ---
 
-outdir = resolve('npm');
-
-if (existsSync(outdir)) {
-	console.log('! removing "npm" directory');
-	await Deno.remove(outdir, { recursive: true });
-}
-
-await Deno.mkdir(outdir);
-log('npm/');
+outdir = resolve('build/npm');
+await reset(outdir);
 
 await copy('package.json');
 await copy('readme.md');
 await copy('license');
 
 await copy('src/hrana.ts');
-
 await transform('src/index.ts');

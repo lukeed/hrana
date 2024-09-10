@@ -31,11 +31,13 @@ jobs:
       - uses: denoland/setup-deno@v1
         with:
           deno-version: ${{ env.DENO_VERSION }}
+
       - name: Print Size
         run: deno task build 1.2.3
-      - name: "Publish (dry run)"
+
+      - name: "Publish → jsr (dry run)"
         run: deno publish --no-check -c jsr.json --dry-run
-        working-directory: ./jsr
+        working-directory: ./build/jsr
 
   test:
     name: Test
@@ -76,18 +78,18 @@ jobs:
       - name: "Publish → jsr"
         if: ${{ !contains(github.ref, '-next.') }}
         run: deno publish --no-check -c jsr.json
-        working-directory: ./jsr
+        working-directory: ./build/jsr
 
       - name: "Publish → npm"
         if: ${{ !contains(github.ref, '-next.') }}
         run: npm publish --provenance --access public
-        working-directory: ./npm
+        working-directory: ./build/npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: "Publish → npm (pre-release)"
         if: ${{ contains(github.ref, '-next.') }}
         run: npm publish --tag next --provenance --access public
-        working-directory: ./npm
+        working-directory: ./build/npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

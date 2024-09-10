@@ -17,11 +17,14 @@ let jsr = {
 	exports: {
 		'.': './index.ts',
 	},
-	include: [
-		'*.ts',
-		'license',
-		'readme.md',
-	],
+	publish: {
+		include: [
+			'index.ts',
+			'hrana.ts',
+			'license',
+			'readme.md',
+		],
+	},
 };
 
 function log(...args: unknown[]) {

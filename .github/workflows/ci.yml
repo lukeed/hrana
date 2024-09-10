@@ -8,9 +8,31 @@ on:
       - "v**"
 
 env:
-  DENO_VERSION: 1.45
+  DENO_VERSION: 1.46
 
 jobs:
+  health:
+    name: Health
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+      - run: deno lint
+      - run: deno fmt --check
+      - run: deno check src/*.ts
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ env.DENO_VERSION }}
+      - run: deno task build
+
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -19,35 +41,8 @@ jobs:
       - uses: denoland/setup-deno@v1
         with:
           deno-version: ${{ env.DENO_VERSION }}
-
-      - name: Lint
-        run: deno lint
-
-      - name: Format
-        run: deno fmt --check
-
-      - name: Type Check
-        run: deno check *.ts
-
-      - name: Test
-        run: deno test --no-check --coverage
-
-      - name: Report
-        run: deno coverage
-
-  gzip:
-    name: Module Size
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.1.12
-
-      - name: gzip (bytes)
-        run: |
-          bytes=$(bun build --minify mod.ts | bunx terser --mangle --compress --module --ecma=2020 | gzip -9 | wc -c)
-          echo "::notice::${bytes} b (gzip)"
+      - run: deno test --no-check --coverage
+      - run: deno coverage
 
   dryrun:
     needs: [test]
@@ -61,13 +56,14 @@ jobs:
           deno-version: ${{ env.DENO_VERSION }}
       - run: deno task build 1.2.3
       - run: deno publish --no-check -c jsr.json --dry-run
+        working-directory: ./jsr
 
 
   # https://jsr.io/docs/publishing-packages#publishing-from-github-actions
   # https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages#publishing-packages-to-the-npm-registry
   publish:
-    needs: [test]
     name: Publish
+    needs: [health, test]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
@@ -91,6 +87,7 @@ jobs:
       - name: "Publish → jsr"
         if: ${{ !contains(github.ref, '-next.') }}
         run: deno publish --no-check -c jsr.json
+        working-directory: ./jsr
 
       - name: "Publish → npm"
         if: ${{ !contains(github.ref, '-next.') }}

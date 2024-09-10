@@ -11,7 +11,8 @@
 				"prefer-const",
 				"no-cond-assign",
 				"no-explicit-any",
-				"no-inner-declarations"
+				"no-inner-declarations",
+				"no-namespace"
 			]
 		}
 	},

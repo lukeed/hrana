@@ -133,7 +133,6 @@ let outfile = join(outdir, 'jsr.json');
 await reset(outdir);
 
 await copy('src/index.ts');
-await copy('src/hrana.ts');
 await copy('readme.md');
 await copy('license');
 
@@ -149,5 +148,4 @@ await copy('package.json');
 await copy('readme.md');
 await copy('license');
 
-await copy('src/hrana.ts');
 await transform('src/index.ts');

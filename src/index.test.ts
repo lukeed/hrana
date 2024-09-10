@@ -3,10 +3,10 @@ import { encodeBase64 } from 'jsr:@std/encoding@^1/base64';
 import { encodeBase64Url } from 'jsr:@std/encoding@^1/base64url';
 
 import * as mod from './index.ts';
-import type { StmtResult, Value } from './hrana.ts';
+import type { Hrana } from './index.ts';
 
 Deno.test('value', async (t) => {
-	function run(expect: unknown, input: Value, mode?: mod.Mode) {
+	function run(expect: unknown, input: Hrana.Value, mode?: mod.Mode) {
 		let output = mod.value(input, mode);
 		assertEquals(output, expect);
 	}
@@ -86,7 +86,7 @@ Deno.test('value', async (t) => {
 
 Deno.test('parse', async (t) => {
 	// select 1
-	let result: StmtResult = {
+	let result: Hrana.StmtResult = {
 		cols: [{ name: '1', decltype: null }],
 		rows: [[{ type: 'integer', value: '1' }]],
 		affected_row_count: 0,

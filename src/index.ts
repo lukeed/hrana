@@ -1,4 +1,156 @@
-import type * as t from './hrana.ts';
+export namespace Hrana {
+	type uint32 = number;
+	type uint64 = number;
+	type double = number;
+
+	export type Value =
+		| Value.Text
+		| Value.Float
+		| Value.Integer
+		| Value.Blob
+		| Value.Null;
+
+	export namespace Value {
+		export type Text = {
+			type: 'text';
+			value: string;
+		};
+
+		export type Null = {
+			type: 'null';
+		};
+
+		export type Float = {
+			type: 'float';
+			value: number;
+		};
+
+		export type Integer = {
+			type: 'integer';
+			value: string;
+		};
+
+		export type Blob = {
+			type: 'blob';
+			base64: string;
+		};
+	}
+
+	export type Error = {
+		message: string;
+		code?: string | null;
+	};
+
+	export type Stmt = {
+		sql: string;
+		args?: Value[];
+		want_rows?: boolean;
+		named_args?: Array<{
+			name: string;
+			value: Value;
+		}>;
+	};
+
+	export type StreamRequest =
+		| CloseStreamReq
+		| ExecuteStreamReq
+		| BatchStreamReq;
+
+	export type StreamResponse =
+		| CloseStreamResp
+		| ExecuteStreamResp
+		| BatchStreamResp;
+
+	// https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#execute-a-pipeline-of-requests-json
+	export type PipelineReqBody = {
+		baton: string | null;
+		requests: Array<StreamRequest>;
+	};
+
+	export type PipelineRespBody<T extends StreamResponse> = {
+		baton: string | null;
+		base_url: string | null;
+		results: Array<
+			| StreamResultOk<T>
+			| StreamResultError
+		>;
+	};
+
+	type CloseStreamReq = {
+		type: 'close';
+	};
+
+	type CloseStreamResp = {
+		type: 'close';
+	};
+
+	type StreamResultOk<T extends StreamResponse> = {
+		type: 'ok';
+		response: T;
+	};
+
+	type StreamResultError = {
+		type: 'error';
+		error: Error;
+	};
+
+	export type BatchStreamReq = {
+		type: 'batch';
+		batch: Batch;
+	};
+
+	export type BatchStreamResp = {
+		type: 'batch';
+		result: BatchResult;
+	};
+
+	export type ExecuteStreamReq = {
+		type: 'execute';
+		stmt: Stmt;
+	};
+
+	export type ExecuteStreamResp = {
+		type: 'execute';
+		result: StmtResult;
+	};
+
+	export type StmtResult = {
+		cols: Array<Col>;
+		rows: Array<Value[]>;
+		affected_row_count: uint64;
+		last_insert_rowid: string | null;
+		rows_read: uint64;
+		rows_written: uint64;
+		query_duration_ms: double;
+	};
+
+	export type Col = {
+		name: string | null;
+		decltype: string | null;
+	};
+
+	export type Batch = {
+		steps: Array<BatchStep>;
+	};
+
+	export type BatchStep = {
+		stmt: Stmt;
+		condition?: BatchCond | null;
+	};
+
+	export type BatchCond =
+		| { type: 'ok'; step: uint32 }
+		| { type: 'error'; step: uint32 }
+		| { type: 'not'; cond: BatchCond }
+		| { type: 'and'; conds: Array<BatchCond> }
+		| { type: 'or'; conds: Array<BatchCond> }
+		| { type: 'is_autocommit' };
+
+	export type BatchResult = {
+		step_results: Array<StmtResult | null>;
+		step_errors: Array<Error | null>;
+	};
+}
 
 export type Config = {
 	/**
@@ -22,8 +174,8 @@ export type Config = {
 };
 
 async function pipeline<
-	T extends t.BatchResult | t.StmtResult,
->(c: Config, input: t.PipelineReqBody): Promise<T> {
+	T extends Hrana.BatchResult | Hrana.StmtResult,
+>(c: Config, input: Hrana.PipelineReqBody): Promise<T> {
 	let method = 'POST';
 	let headers = new Headers();
 	let body: BodyInit | null = null;
@@ -40,8 +192,8 @@ async function pipeline<
 	let r = await request(c, '/v3/pipeline', { method, body, headers });
 	if (!r.ok) throw r;
 
-	type Reply = t.ExecuteStreamResp | t.BatchStreamResp;
-	let reply = (await r.json() as t.PipelineRespBody<Reply>).results[0];
+	type Reply = Hrana.ExecuteStreamResp | Hrana.BatchStreamResp;
+	let reply = (await r.json() as Hrana.PipelineRespBody<Reply>).results[0];
 	if (reply.type === 'ok') return reply.response.result as T;
 
 	let err = new Error(reply.error.message);
@@ -66,8 +218,8 @@ function request(c: Config, path: `/${string}`, init?: RequestInit) {
  * > Throws an `Error` for pipeline statement errors.
  * > Throws the `Response` for non-2xx status codes (eg, Authorization issues).
  */
-export function execute(config: Config, query: t.Stmt): Promise<t.StmtResult> {
-	return pipeline<t.StmtResult>(config, {
+export function execute(config: Config, query: Hrana.Stmt): Promise<Hrana.StmtResult> {
+	return pipeline<Hrana.StmtResult>(config, {
 		baton: null,
 		requests: [{
 			type: 'execute',
@@ -87,8 +239,8 @@ export function execute(config: Config, query: t.Stmt): Promise<t.StmtResult> {
  * > Throws an `Error` for pipeline statement errors.
  * > Throws the `Response` for non-2xx status codes (eg, Authorization issues).
  */
-export function batch(config: Config, ...steps: t.BatchStep[]): Promise<t.BatchResult> {
-	return pipeline<t.BatchResult>(config, {
+export function batch(config: Config, ...steps: Hrana.BatchStep[]): Promise<Hrana.BatchResult> {
+	return pipeline<Hrana.BatchResult>(config, {
 		baton: null,
 		requests: [{
 			type: 'batch',
@@ -143,12 +295,12 @@ export type Row = {
  * @param result The statement results.
  * @param mode The {@link Mode} for "integer" column parsing; default="number"
  */
-export function parse<T extends Row = Row>(result: t.StmtResult, mode?: Mode): T[] {
+export function parse<T extends Row = Row>(result: Hrana.StmtResult, mode?: Mode): T[] {
 	let { cols, rows } = result;
 	let i = 0, len = rows.length;
 	let k = 0, klen = cols.length;
-	let row: Row, tmp: t.Value[];
-	let c: t.Col, v: t.Value;
+	let row: Row, tmp: Hrana.Value[];
+	let c: Hrana.Col, v: Hrana.Value;
 
 	let output = Array<Row>(len);
 
@@ -161,7 +313,7 @@ export function parse<T extends Row = Row>(result: t.StmtResult, mode?: Mode): T
 			if (c.name) {
 				v = tmp[k];
 				if (c.decltype) {
-					v.type = c.decltype as t.Value['type'];
+					v.type = c.decltype as Hrana.Value['type'];
 				}
 				row[c.name] = value(v, mode);
 			}
@@ -179,16 +331,16 @@ export function parse<T extends Row = Row>(result: t.StmtResult, mode?: Mode): T
  * @param raw The value to parse.
  * @param mode The integer {@link Mode}; default="number"
  */
-export function value(raw: t.Value.Null): null;
-export function value(raw: t.Value.Text): string;
-export function value(raw: t.Value.Blob): Uint8Array;
-export function value(raw: t.Value.Float): number;
-export function value(raw: t.Value.Integer): number;
-export function value(raw: t.Value.Integer, mode: 'number'): number;
-export function value(raw: t.Value.Integer, mode: 'string'): string;
-export function value(raw: t.Value.Integer, mode: 'bigint'): bigint;
-export function value(raw: t.Value, mode?: Mode): string | number | bigint | Uint8Array | null;
-export function value(raw: t.Value, mode?: Mode) {
+export function value(raw: Hrana.Value.Null): null;
+export function value(raw: Hrana.Value.Text): string;
+export function value(raw: Hrana.Value.Blob): Uint8Array;
+export function value(raw: Hrana.Value.Float): number;
+export function value(raw: Hrana.Value.Integer): number;
+export function value(raw: Hrana.Value.Integer, mode: 'number'): number;
+export function value(raw: Hrana.Value.Integer, mode: 'string'): string;
+export function value(raw: Hrana.Value.Integer, mode: 'bigint'): bigint;
+export function value(raw: Hrana.Value, mode?: Mode): string | number | bigint | Uint8Array | null;
+export function value(raw: Hrana.Value, mode?: Mode) {
 	switch (raw.type) {
 		case 'null':
 			return null;

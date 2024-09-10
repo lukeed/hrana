@@ -61,13 +61,13 @@ async function transform(file: string) {
 	}
 
 	let rgx = /\.tsx?$/;
-	let esm = filename.replace(rgx, '.mjs');
 	let dts = filename.replace(rgx, '.d.mts');
+	entry = filename.replace(rgx, '.mjs');
 
 	let outfile = join(outdir, dts);
 	await write(outfile, xform.declaration!);
 
-	outfile = join(outdir, esm);
+	outfile = join(outdir, entry);
 	await write(outfile, xform.code);
 
 	try {
@@ -78,11 +78,30 @@ async function transform(file: string) {
 			toplevel: true,
 			module: true,
 		});
+
 		if (!min.code) throw 1;
 
-		log('::notice::%s (%d b)', esm, min.code.length);
+		let bytes = await gzip(min.code);
+		log('::notice::%s (%d b)', entry, bytes);
 	} catch (err) {
 		bail('terser', err);
+	}
+}
+
+async function gzip(raw: string) {
+	let gzip = new CompressionStream('gzip');
+
+	let writer = gzip.writable.getWriter();
+	writer.write(new TextEncoder().encode(raw));
+	writer.close();
+
+	let size = 0;
+	let reader = gzip.readable.getReader();
+
+	while (true) {
+		let b = await reader.read();
+		if (b.done) return size;
+		size += b.value.length;
 	}
 }
 

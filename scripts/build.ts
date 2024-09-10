@@ -17,6 +17,11 @@ let jsr = {
 	exports: {
 		'.': './index.ts',
 	},
+	include: [
+		'*.ts',
+		'license',
+		'readme.md',
+	],
 };
 
 function log(...args: unknown[]) {

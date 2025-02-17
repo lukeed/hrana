@@ -104,7 +104,7 @@ async function transform(file: string) {
 		let bytes = await gzip(min.code);
 		log('::notice::%s (%d b)', entry, bytes);
 	} catch (err) {
-		bail('terser', err);
+		bail('terser', err as string[]);
 	}
 }
 

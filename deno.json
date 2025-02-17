@@ -21,6 +21,7 @@
 		"singleQuote": true,
 		"useTabs": true
 	},
+	"nodeModulesDir": "auto",
 	"exclude": [
 		"build",
 		"coverage",

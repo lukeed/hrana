@@ -11,6 +11,11 @@ export namespace Hrana {
 		| Value.Null;
 
 	export namespace Value {
+		/**
+		 * The parsed value JS type(s) that {@link parse} and/or {@link value} will return.
+		 */
+		export type Parsed = string | number | bigint | Uint8Array | null;
+
 		export type Text = {
 			type: 'text';
 			value: string;
@@ -290,12 +295,27 @@ export type Row = {
 };
 
 /**
+ * A custom transformer function for a column.
+ */
+export type Transformer<T> = (value: Hrana.Value.Parsed) => T;
+
+/**
+ * A map of column names to transformer functions.
+ */
+export type Transformers<T extends Row> = {
+	[K in keyof T]?: Transformer<T[K]>;
+};
+
+/**
  * Parse all Rows from the statement results.
  *
  * @param result The statement results.
- * @param mode The {@link Mode} for "integer" column parsing; default="number"
+ * @param options The parsing options.
  */
-export function parse<T extends Row = Row>(result: Hrana.StmtResult, mode?: Mode): T[] {
+export function parse<T extends Row = Row>(
+	result: Hrana.StmtResult,
+	options?: Mode | Transformers<T>,
+): T[] {
 	let { cols, rows } = result;
 	let i = 0, len = rows.length;
 	let k = 0, klen = cols.length;
@@ -304,18 +324,32 @@ export function parse<T extends Row = Row>(result: Hrana.StmtResult, mode?: Mode
 
 	let output = Array<Row>(len);
 
+	let mode: Mode | undefined;
+	let tx: Transformers<T> = {};
+
+	if (typeof options === 'string') {
+		mode = options;
+	} else if (options) {
+		tx = options;
+	}
+
 	for (; i < len; i++) {
 		row = {};
 		tmp = rows[i];
 
 		for (k = 0; k < klen; k++) {
 			c = cols[k];
+
 			if (c.name) {
 				v = tmp[k];
 				if (c.decltype) {
 					v.type = c.decltype.toLowerCase() as Hrana.Value['type'];
 				}
+
 				row[c.name] = value(v, mode);
+				if (tx[c.name]) {
+					row[c.name] = tx[c.name]!(row[c.name] as Hrana.Value.Parsed);
+				}
 			}
 		}
 
@@ -339,8 +373,8 @@ export function value(raw: Hrana.Value.Integer): number;
 export function value(raw: Hrana.Value.Integer, mode: 'number'): number;
 export function value(raw: Hrana.Value.Integer, mode: 'string'): string;
 export function value(raw: Hrana.Value.Integer, mode: 'bigint'): bigint;
-export function value(raw: Hrana.Value, mode?: Mode): string | number | bigint | Uint8Array | null;
-export function value(raw: Hrana.Value, mode?: Mode) {
+export function value(raw: Hrana.Value, mode?: Mode): Hrana.Value.Parsed;
+export function value(raw: Hrana.Value, mode?: Mode): Hrana.Value.Parsed {
 	switch (raw.type) {
 		case 'null':
 			return null;

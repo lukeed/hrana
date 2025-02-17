@@ -101,7 +101,7 @@ Deno.test('parse', async (t) => {
 		assertEquals(output, [{ 1: 1 }]);
 	});
 
-	await t.step('simple w/ mode', () => {
+	await t.step('simple w/ "mode" string', () => {
 		let output = mod.parse(result, 'bigint');
 		assertEquals(output, [{ 1: 1n }]);
 	});
@@ -156,6 +156,38 @@ Deno.test('parse', async (t) => {
 		}, {
 			uid: '01GW4',
 			name: 'world',
+		}]);
+	});
+
+	await t.step('transformers', () => {
+		result.cols = [{
+			name: 'name',
+			decltype: null,
+		}, {
+			name: 'config',
+			decltype: 'TEXT',
+		}];
+
+		result.rows = [
+			[{ type: 'text', value: 'foo' }, { type: 'text', value: '{"foo":123}' }],
+			[{ type: 'text', value: 'bar' }, { type: 'text', value: '{"bar":"asd"}' }],
+		];
+
+		type Row = {
+			name: string;
+			config: unknown;
+		};
+
+		let output = mod.parse<Row>(result, {
+			config: (v) => JSON.parse(v as string),
+		});
+
+		assertEquals(output, [{
+			name: 'foo',
+			config: { foo: 123 },
+		}, {
+			name: 'bar',
+			config: { bar: 'asd' },
 		}]);
 	});
 });

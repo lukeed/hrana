@@ -313,7 +313,7 @@ export function parse<T extends Row = Row>(result: Hrana.StmtResult, mode?: Mode
 			if (c.name) {
 				v = tmp[k];
 				if (c.decltype) {
-					v.type = c.decltype as Hrana.Value['type'];
+					v.type = c.decltype.toLowerCase() as Hrana.Value['type'];
 				}
 				row[c.name] = value(v, mode);
 			}

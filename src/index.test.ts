@@ -133,4 +133,29 @@ Deno.test('parse', async (t) => {
 			age: null,
 		}]);
 	});
+
+	await t.step('decltype', () => {
+		result.cols = [{
+			name: 'uid',
+			decltype: 'TEXT',
+		}, {
+			name: 'name',
+			decltype: 'TEXT',
+		}];
+
+		result.rows = [
+			[{ type: 'text', value: '01GW3' }, { type: 'text', value: 'hello' }],
+			[{ type: 'text', value: '01GW4' }, { type: 'text', value: 'world' }],
+		];
+
+		let output = mod.parse(result);
+
+		assertEquals(output, [{
+			uid: '01GW3',
+			name: 'hello',
+		}, {
+			uid: '01GW4',
+			name: 'world',
+		}]);
+	});
 });

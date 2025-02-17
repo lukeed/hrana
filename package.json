@@ -9,10 +9,8 @@
 	"license": "MIT",
 	"exports": {
 		".": {
-			"import": {
-				"types": "./index.d.ts",
-				"default": "./index.mjs"
-			}
+			"types": "./index.d.mts",
+			"default": "./index.mjs"
 		},
 		"./package.json": "./package.json"
 	},

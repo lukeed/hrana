@@ -3,9 +3,9 @@ name: CI
 on:
   push:
     branches:
-      - "**"
+      - '**'
     tags:
-      - "v**"
+      - 'v**'
 
 env:
   DENO_VERSION: 2.1
@@ -35,7 +35,7 @@ jobs:
       - name: Print Size
         run: deno task build 1.2.3
 
-      - name: "Publish → jsr (dry run)"
+      - name: 'Publish → jsr (dry run)'
         run: deno publish --no-check -c jsr.json --dry-run
         working-directory: ./build/jsr
 
@@ -75,19 +75,19 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/v}
           deno task build $VERSION
 
-      - name: "Publish → jsr"
+      - name: 'Publish → jsr'
         if: ${{ !contains(github.ref, '-next.') }}
         run: deno publish --no-check -c jsr.json
         working-directory: ./build/jsr
 
-      - name: "Publish → npm"
+      - name: 'Publish → npm'
         if: ${{ !contains(github.ref, '-next.') }}
         run: npm publish --provenance --access public
         working-directory: ./build/npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: "Publish → npm (pre-release)"
+      - name: 'Publish → npm (pre-release)'
         if: ${{ contains(github.ref, '-next.') }}
         run: npm publish --tag next --provenance --access public
         working-directory: ./build/npm

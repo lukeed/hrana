@@ -8,7 +8,7 @@ on:
       - "v**"
 
 env:
-  DENO_VERSION: 1.46
+  DENO_VERSION: 2.1
 
 jobs:
   health:
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v2
         with:
           deno-version: ${{ env.DENO_VERSION }}
       - run: deno lint

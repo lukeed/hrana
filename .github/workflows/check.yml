@@ -6,7 +6,7 @@ on:
     - cron: "0 0 * * *" # every UTC midnight
 
 env:
-  DENO_VERSION: 1.45
+  DENO_VERSION: 2.1
 
 jobs:
   spec:
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v2
         with:
           deno-version: ${{ env.DENO_VERSION }}
 

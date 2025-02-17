@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
-import oxc from 'npm:oxc-transform@^0.27';
-import { minify } from 'npm:terser@5.32.0';
+import oxc from 'npm:oxc-transform@0.51.0';
+import { minify } from 'npm:terser@5.39.0';
 
 const Quiet = Deno.args.includes('--quiet');
 
@@ -31,7 +31,7 @@ function log(...args: unknown[]) {
 	Quiet || console.log(...args);
 }
 
-function bail(label: string, errors: string[]): never {
+function bail(label: string, errors: unknown): never {
 	console.error('[%s] error(s)', label, errors);
 	Deno.exit(1);
 }
@@ -71,8 +71,11 @@ async function transform(file: string) {
 
 	let xform = oxc.transform(entry, source, {
 		typescript: {
+			allowNamespaces: true,
 			onlyRemoveTypeImports: true,
-			declaration: true,
+			declaration: {
+				stripInternal: true,
+			},
 		},
 	});
 
@@ -104,7 +107,7 @@ async function transform(file: string) {
 		let bytes = await gzip(min.code);
 		log('::notice::%s (%d b)', entry, bytes);
 	} catch (err) {
-		bail('terser', err as string[]);
+		bail('terser', err);
 	}
 }
 

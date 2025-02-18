@@ -463,10 +463,18 @@ export function decode(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Decode
 
 			return raw.value;
 		}
-
-		case 'blob':
-			return toBuffer(raw.base64);
 	}
+
+	// type-only assertion
+	raw satisfies Hrana.Value.Blob;
+
+	let bin = atob(raw.base64);
+	let i = 0, size = bin.length;
+	let bytes = new Uint8Array(size);
+	for (; i < size; i++) {
+		bytes[i] = bin.charCodeAt(i);
+	}
+	return bytes;
 }
 
 export function encode(
@@ -504,25 +512,14 @@ export function encode(
 			};
 	}
 
+	// type-only assertion
+	v satisfies Uint8Array | ArrayBuffer;
+
 	return {
 		type: 'blob',
-		base64: toString(v),
+		base64: btoa(
+			// @ts-expect-error; Uint8Array is ArrayLike<number>
+			String.fromCharCode.apply(null, new Uint8Array(v)),
+		),
 	};
-}
-
-function toBuffer(b64: string): Uint8Array {
-	let bin = atob(b64);
-	let i = 0, size = bin.length;
-	let bytes = new Uint8Array(size);
-	for (; i < size; i++) {
-		bytes[i] = bin.charCodeAt(i);
-	}
-	return bytes;
-}
-
-function toString(buf: ArrayBuffer): string {
-	return btoa(
-		// @ts-expect-error; Uint8Array is ArrayLike<number>
-		String.fromCharCode.apply(null, new Uint8Array(buf)),
-	);
 }

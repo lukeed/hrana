@@ -20,7 +20,6 @@ let jsr = {
 	publish: {
 		include: [
 			'index.ts',
-			'hrana.ts',
 			'license',
 			'readme.md',
 		],

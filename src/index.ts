@@ -244,7 +244,7 @@ export function execute(config: Config, query: Hrana.Stmt): Promise<Hrana.StmtRe
  * > Throws an `Error` for pipeline statement errors.
  * > Throws the `Response` for non-2xx status codes (eg, Authorization issues).
  */
-export function batch(config: Config, ...steps: Hrana.BatchStep[]): Promise<Hrana.BatchResult> {
+export function batch(config: Config, steps: Hrana.BatchStep[]): Promise<Hrana.BatchResult> {
 	return pipeline<Hrana.BatchResult>(config, {
 		baton: null,
 		requests: [{
@@ -254,6 +254,73 @@ export function batch(config: Config, ...steps: Hrana.BatchStep[]): Promise<Hran
 			type: 'close',
 		}],
 	});
+}
+
+/**
+ * The Transaction Mode.
+ *
+ * * `IMMEDIATE` - starts a transaction and commits it immediately.
+ * * `DEFERRED` - only starts a transaction once a read/write is attempted. (default)
+ * * `READONLY` - starts a read-only transaction that fails if any writes occur.
+ *
+ * @see https://www.sqlite.org/lang_transaction.html
+ * @source https://github.com/tursodatabase/libsql/commit/91f4780c0b5eeb738c10abd82d1d8a97e99b2923
+ */
+export type TransactionMode = 'readonly' | 'immediate' | 'deferred';
+
+export async function transaction(
+	config: Config,
+	type: TransactionMode,
+	...stmts: Hrana.Stmt[]
+): Promise<Hrana.BatchResult> {
+	let i = 0, len = stmts.length;
+	let steps: Hrana.BatchStep[] = [{
+		stmt: {
+			sql: `BEGIN ${type}`,
+		},
+	}];
+
+	for (; i < len; i++) {
+		steps.push({
+			stmt: stmts[i],
+			condition: {
+				type: 'and',
+				conds: [
+					{ type: 'ok', step: i }, // points to previous item
+					{ type: 'not', cond: { type: 'is_autocommit' } },
+				],
+			},
+		});
+	}
+
+	len = steps.length;
+	steps.push({
+		stmt: {
+			sql: 'COMMIT',
+		},
+	});
+
+	steps.push({
+		stmt: {
+			sql: 'ROLLBACK',
+		},
+		condition: {
+			type: 'not',
+			cond: {
+				type: 'ok',
+				step: len, // points to COMMIT
+			},
+		},
+	});
+
+	// NOTE: may throw
+	let r = await batch(config, steps);
+
+	// remove BEGIN, COMMIT, ROLLBACK steps
+	r.step_results = r.step_results.slice(1, len);
+	r.step_errors = r.step_errors.slice(1, len);
+
+	return r;
 }
 
 /**

@@ -6,7 +6,7 @@ import * as mod from './index.ts';
 import type { Hrana } from './index.ts';
 
 Deno.test('value', async (t) => {
-	function run(expect: unknown, input: Hrana.Value, mode?: mod.Mode) {
+	function run(expect: unknown, input: Hrana.Value, mode?: mod.IntegerMode) {
 		let output = mod.value(input, mode);
 		assertEquals(output, expect);
 	}

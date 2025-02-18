@@ -285,7 +285,7 @@ export function supports(config: Config): Promise<boolean> {
  * @default "number"
  * @see https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#values
  */
-export type Mode = 'number' | 'bigint' | 'string';
+export type IntegerMode = 'number' | 'bigint' | 'string';
 
 /**
  * The parsed Row type.
@@ -314,7 +314,7 @@ export type Transformers<T extends Row> = {
  */
 export function parse<T extends Row = Row>(
 	result: Hrana.StmtResult,
-	options?: Mode | Transformers<T>,
+	options?: IntegerMode | Transformers<T>,
 ): T[] {
 	let { cols, rows } = result;
 	let i = 0, len = rows.length;
@@ -324,7 +324,7 @@ export function parse<T extends Row = Row>(
 
 	let output = Array<Row>(len);
 
-	let mode: Mode | undefined;
+	let mode: IntegerMode | undefined;
 	let tx: Transformers<T> = {};
 
 	if (typeof options === 'string') {
@@ -363,7 +363,7 @@ export function parse<T extends Row = Row>(
  * Parse a column's value.
  *
  * @param raw The value to parse.
- * @param mode The integer {@link Mode}; default="number"
+ * @param mode The integer {@link IntegerMode}; default="number"
  */
 export function value(raw: Hrana.Value.Null): null;
 export function value(raw: Hrana.Value.Text): string;
@@ -373,8 +373,8 @@ export function value(raw: Hrana.Value.Integer): number;
 export function value(raw: Hrana.Value.Integer, mode: 'number'): number;
 export function value(raw: Hrana.Value.Integer, mode: 'string'): string;
 export function value(raw: Hrana.Value.Integer, mode: 'bigint'): bigint;
-export function value(raw: Hrana.Value, mode?: Mode): Hrana.Value.Parsed;
-export function value(raw: Hrana.Value, mode?: Mode): Hrana.Value.Parsed {
+export function value(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Parsed;
+export function value(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Parsed {
 	switch (raw.type) {
 		case 'null':
 			return null;

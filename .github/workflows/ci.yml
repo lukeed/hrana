@@ -10,6 +10,10 @@ on:
 env:
   DENO_VERSION: 2.1
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+
 jobs:
   health:
     name: Health
@@ -75,11 +79,6 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/v}
           deno task build $VERSION
 
-      - name: 'Publish → jsr'
-        if: ${{ !contains(github.ref, '-next.') }}
-        run: deno publish --no-check -c jsr.json
-        working-directory: ./build/jsr
-
       - name: 'Publish → npm'
         if: ${{ !contains(github.ref, '-next.') }}
         run: npm publish --provenance --access public
@@ -93,3 +92,8 @@ jobs:
         working-directory: ./build/npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: 'Publish → jsr'
+        if: ${{ !contains(github.ref, '-next.') }}
+        run: deno publish --no-check -c jsr.json
+        working-directory: ./build/jsr

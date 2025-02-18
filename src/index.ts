@@ -3,6 +3,9 @@ export namespace Hrana {
 	type uint64 = number;
 	type double = number;
 
+	/**
+	 * The value structures that come from the Hrana server.
+	 */
 	export type Value =
 		| Value.Text
 		| Value.Float
@@ -16,36 +19,57 @@ export namespace Hrana {
 		 */
 		export type Decoded = string | number | bigint | Uint8Array | null;
 
+		/**
+		 * A string value.
+		 */
 		export type Text = {
 			type: 'text';
 			value: string;
 		};
 
+		/**
+		 * A null value.
+		 */
 		export type Null = {
 			type: 'null';
 		};
 
+		/**
+		 * A floating-point value.
+		 */
 		export type Float = {
 			type: 'float';
 			value: number;
 		};
 
+		/**
+		 * An integer value.
+		 */
 		export type Integer = {
 			type: 'integer';
 			value: string;
 		};
 
+		/**
+		 * A binary value.
+		 */
 		export type Blob = {
 			type: 'blob';
 			base64: string;
 		};
 	}
 
+	/**
+	 * An Hrana error response structure
+	 */
 	export type Error = {
 		message: string;
 		code?: string | null;
 	};
 
+	/**
+	 * A Hrana statement structure.
+	 */
 	export type Stmt = {
 		sql: string;
 		args?: Value[];
@@ -119,6 +143,9 @@ export namespace Hrana {
 		result: StmtResult;
 	};
 
+	/**
+	 * A Hrana statement result structure.
+	 */
 	export type StmtResult = {
 		cols: Array<Col>;
 		rows: Array<Value[]>;
@@ -157,6 +184,9 @@ export namespace Hrana {
 	};
 }
 
+/**
+ * The credentials and/or configuration for the Hrana client.
+ */
 export type Config = {
 	/**
 	 * The database URL.
@@ -268,6 +298,17 @@ export function batch(config: Config, steps: Hrana.BatchStep[]): Promise<Hrana.B
  */
 export type TransactionMode = 'readonly' | 'immediate' | 'deferred';
 
+/**
+ * Execute a transaction.
+ *
+ * > [!NOTE]
+ * > Throws an `Error` for pipeline statement errors.
+ * > Throws the `Response` for non-2xx status codes (eg, Authorization issues).
+ *
+ * @param config The Hrana configuration.
+ * @param type The transaction mode.
+ * @param stmts The statements to execute.
+ */
 export async function transaction(
 	config: Config,
 	type: TransactionMode,
@@ -477,6 +518,11 @@ export function decode(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Decode
 	return bytes;
 }
 
+/**
+ * Encode a JS value into its Hrana representation.
+ *
+ * @param v The value to encode.
+ */
 export function encode(
 	v: Hrana.Value.Decoded | ArrayBuffer | Uint8Array | boolean | undefined,
 ): Hrana.Value {

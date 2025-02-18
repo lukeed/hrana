@@ -469,6 +469,47 @@ export function decode(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Decode
 	}
 }
 
+export function encode(
+	v: Hrana.Value.Decoded | ArrayBuffer | Uint8Array | boolean | undefined,
+): Hrana.Value {
+	if (v == null) {
+		return {
+			type: 'null',
+		};
+	}
+
+	switch (typeof v) {
+		case 'string':
+			return {
+				type: 'text',
+				value: v,
+			};
+
+		case 'number':
+			return {
+				type: 'float',
+				value: v,
+			};
+
+		case 'bigint':
+			return {
+				type: 'integer',
+				value: '' + v,
+			};
+
+		case 'boolean':
+			return {
+				type: 'integer',
+				value: v ? '1' : '0',
+			};
+	}
+
+	return {
+		type: 'blob',
+		base64: toString(v),
+	};
+}
+
 function toBuffer(b64: string): Uint8Array {
 	let bin = atob(b64);
 	let i = 0, size = bin.length;
@@ -477,4 +518,11 @@ function toBuffer(b64: string): Uint8Array {
 		bytes[i] = bin.charCodeAt(i);
 	}
 	return bytes;
+}
+
+function toString(buf: ArrayBuffer): string {
+	return btoa(
+		// @ts-expect-error; Uint8Array is ArrayLike<number>
+		String.fromCharCode.apply(null, new Uint8Array(buf)),
+	);
 }

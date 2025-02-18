@@ -5,7 +5,7 @@ import { encodeBase64Url } from 'jsr:@std/encoding@^1/base64url';
 import * as mod from './index.ts';
 import type { Hrana } from './index.ts';
 
-Deno.test('value', async (t) => {
+Deno.test('decode', async (t) => {
 	function run(expect: unknown, input: Hrana.Value, mode?: mod.IntegerMode) {
 		let output = mod.decode(input, mode);
 		assertEquals(output, expect);
@@ -81,6 +81,89 @@ Deno.test('value', async (t) => {
 			type: 'integer',
 			value: '123',
 		}, 'bigint');
+	});
+});
+
+Deno.test('encode', async (t) => {
+	function run(
+		input: Hrana.Value.Decoded | ArrayBuffer | Uint8Array | boolean | undefined,
+		expect: Hrana.Value,
+	) {
+		let output = mod.encode(input);
+		assertEquals(output, expect);
+	}
+
+	await t.step('null', () => {
+		run(null, {
+			type: 'null',
+		});
+	});
+
+	await t.step('text', () => {
+		run('', {
+			type: 'text',
+			value: '',
+		});
+
+		run('foobar', {
+			type: 'text',
+			value: 'foobar',
+		});
+	});
+
+	await t.step('blob', () => {
+		let input = 'hello 123';
+		let expect = new TextEncoder().encode(input);
+
+		run(expect, {
+			type: 'blob',
+			base64: btoa(input),
+		});
+
+		run(expect, {
+			type: 'blob',
+			base64: encodeBase64(input),
+		});
+
+		run(expect, {
+			type: 'blob',
+			base64: encodeBase64Url(input),
+		});
+	});
+
+	// note: send all but bigint as float
+	await t.step('number', () => {
+		run(1.23, {
+			type: 'float',
+			value: 1.23,
+		});
+
+		run(1.0, {
+			type: 'float',
+			value: 1.0,
+		});
+
+		run(123, {
+			type: 'float',
+			value: 123,
+		});
+
+		run(123n, {
+			type: 'integer',
+			value: '123',
+		});
+	});
+
+	await t.step('boolean', () => {
+		run(true, {
+			type: 'integer',
+			value: '1',
+		});
+
+		run(false, {
+			type: 'integer',
+			value: '0',
+		});
 	});
 });
 

@@ -10,10 +10,10 @@ let content = await Deno.readTextFile(input);
 let config = JSON.parse(content);
 config.version = version;
 
-type Options = Parameters<typeof Deno.run>[0];
+type Options = Omit<Deno.CommandOptions, 'args'> & { cmd: string[] };
 async function run(label: string, options: Options) {
-	// deno-lint-ignore no-deprecated-deno-api
-	let p = await Deno.run(options).status();
+	let [cmd, ...args] = options.cmd;
+	let p = await new Deno.Command(cmd, { ...options, args }).output();
 	assert(p.code === 0, label);
 }
 

@@ -14,7 +14,7 @@ export namespace Hrana {
 		/**
 		 * The parsed value JS type(s) that {@link parse} and/or {@link decode} will return.
 		 */
-		export type Parsed = string | number | bigint | Uint8Array | null;
+		export type Decoded = string | number | bigint | Uint8Array | null;
 
 		export type Text = {
 			type: 'text';
@@ -364,7 +364,7 @@ export type Row = {
 /**
  * A custom transformer function for a column.
  */
-export type Transformer<T> = (value: Hrana.Value.Parsed) => T;
+export type Transformer<T> = (value: Hrana.Value.Decoded) => T;
 
 /**
  * A map of column names to transformer functions.
@@ -415,7 +415,7 @@ export function parse<T extends Row = Row>(
 
 				row[c.name] = decode(v, mode);
 				if (tx[c.name]) {
-					row[c.name] = tx[c.name]!(row[c.name] as Hrana.Value.Parsed);
+					row[c.name] = tx[c.name]!(row[c.name] as Hrana.Value.Decoded);
 				}
 			}
 		}
@@ -440,8 +440,8 @@ export function decode(raw: Hrana.Value.Integer): number;
 export function decode(raw: Hrana.Value.Integer, mode: 'number'): number;
 export function decode(raw: Hrana.Value.Integer, mode: 'string'): string;
 export function decode(raw: Hrana.Value.Integer, mode: 'bigint'): bigint;
-export function decode(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Parsed;
-export function decode(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Parsed {
+export function decode(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Decoded;
+export function decode(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Decoded {
 	switch (raw.type) {
 		case 'null':
 			return null;

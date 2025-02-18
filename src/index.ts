@@ -12,7 +12,7 @@ export namespace Hrana {
 
 	export namespace Value {
 		/**
-		 * The parsed value JS type(s) that {@link parse} and/or {@link value} will return.
+		 * The parsed value JS type(s) that {@link parse} and/or {@link decode} will return.
 		 */
 		export type Parsed = string | number | bigint | Uint8Array | null;
 
@@ -413,7 +413,7 @@ export function parse<T extends Row = Row>(
 					v.type = c.decltype.toLowerCase() as Hrana.Value['type'];
 				}
 
-				row[c.name] = value(v, mode);
+				row[c.name] = decode(v, mode);
 				if (tx[c.name]) {
 					row[c.name] = tx[c.name]!(row[c.name] as Hrana.Value.Parsed);
 				}
@@ -427,21 +427,21 @@ export function parse<T extends Row = Row>(
 }
 
 /**
- * Parse a column's value.
+ * Decode a value.
  *
  * @param raw The value to parse.
  * @param mode The integer {@link IntegerMode}; default="number"
  */
-export function value(raw: Hrana.Value.Null): null;
-export function value(raw: Hrana.Value.Text): string;
-export function value(raw: Hrana.Value.Blob): Uint8Array;
-export function value(raw: Hrana.Value.Float): number;
-export function value(raw: Hrana.Value.Integer): number;
-export function value(raw: Hrana.Value.Integer, mode: 'number'): number;
-export function value(raw: Hrana.Value.Integer, mode: 'string'): string;
-export function value(raw: Hrana.Value.Integer, mode: 'bigint'): bigint;
-export function value(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Parsed;
-export function value(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Parsed {
+export function decode(raw: Hrana.Value.Null): null;
+export function decode(raw: Hrana.Value.Text): string;
+export function decode(raw: Hrana.Value.Blob): Uint8Array;
+export function decode(raw: Hrana.Value.Float): number;
+export function decode(raw: Hrana.Value.Integer): number;
+export function decode(raw: Hrana.Value.Integer, mode: 'number'): number;
+export function decode(raw: Hrana.Value.Integer, mode: 'string'): string;
+export function decode(raw: Hrana.Value.Integer, mode: 'bigint'): bigint;
+export function decode(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Parsed;
+export function decode(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Parsed {
 	switch (raw.type) {
 		case 'null':
 			return null;
@@ -465,11 +465,11 @@ export function value(raw: Hrana.Value, mode?: IntegerMode): Hrana.Value.Parsed 
 		}
 
 		case 'blob':
-			return decode(raw.base64);
+			return toBuffer(raw.base64);
 	}
 }
 
-function decode(b64: string): Uint8Array {
+function toBuffer(b64: string): Uint8Array {
 	let bin = atob(b64);
 	let i = 0, size = bin.length;
 	let bytes = new Uint8Array(size);

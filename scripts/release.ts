@@ -13,8 +13,8 @@ config.version = version;
 type Options = Omit<Deno.CommandOptions, 'args'> & { cmd: string[] };
 async function run(label: string, options: Options) {
 	let [cmd, ...args] = options.cmd;
-	let p = await new Deno.Command(cmd, { ...options, args }).output();
-	assert(p.code === 0, label);
+	let pid = new Deno.Command(cmd, { ...options, args }).spawn();
+	assert((await pid.status).success, label);
 }
 
 content = JSON.stringify(config, null, 2);

@@ -147,7 +147,18 @@ await write(outfile, JSON.stringify(jsr, null, 2));
 outdir = resolve('build/npm');
 await reset(outdir);
 
-await copy('package.json');
+let pkg = await import('../package.json', {
+	with: {
+		type: 'json',
+	},
+});
+
+pkg.default.version = version;
+await write(
+	join(outdir, 'package.json'),
+	JSON.stringify(pkg.default, null, 2),
+);
+
 await copy('readme.md');
 await copy('license');
 

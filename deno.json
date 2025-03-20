@@ -25,6 +25,5 @@
 		"build",
 		"coverage",
 		"readme.md"
-	],
-	"version": "0.0.4"
+	]
 }

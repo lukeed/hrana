@@ -33,7 +33,7 @@ jobs:
           deno-version: ${{ env.DENO_VERSION }}
 
       - name: Print Size
-        run: deno task build 1.2.3
+        run: deno task build
 
       - name: 'Publish → jsr (dry run)'
         run: deno publish --no-check -c jsr.json --dry-run
@@ -71,9 +71,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Build
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          deno task build $VERSION
+        run: deno task build
 
       - name: 'Publish → npm'
         if: ${{ !contains(github.ref, '-next.') }}

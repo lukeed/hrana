@@ -1,26 +1,27 @@
 import { existsSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 
-import oxc from 'npm:oxc-transform@0.51.0';
-import { minify } from 'npm:terser@5.39.0';
+import { transform } from 'npm:oxc-transform@0.61.0';
+import { minify } from 'npm:oxc-minify@0.61.0';
 
 const Quiet = Deno.args.includes('--quiet');
 
-const version = Deno.args[0];
-console.log('? version:', version);
+let pkg = await import('../package.json', {
+	with: { type: 'json' },
+}).then((m) => m.default);
 
 // build "jsr.json" file
 // @see https://jsr.io/schema/config-file.v1.json
 let jsr = {
-	version: version,
-	name: '@lukeed/hrana',
+	version: pkg.version,
+	name: `@lukeed/${pkg.name}`,
 	exports: {
 		'.': './index.ts',
 	},
 	publish: {
 		include: [
-			'index.ts',
 			'license',
+			'index.ts',
 			'readme.md',
 		],
 	},
@@ -63,12 +64,12 @@ async function reset(target: string) {
 	log('%s/', name);
 }
 
-async function transform(file: string) {
+async function translate(file: string) {
 	let entry = resolve(file);
 	let filename = basename(entry);
 	let source = await Deno.readTextFile(entry);
 
-	let xform = oxc.transform(entry, source, {
+	let xform = transform(entry, source, {
 		typescript: {
 			allowNamespaces: true,
 			onlyRemoveTypeImports: true,
@@ -93,12 +94,13 @@ async function transform(file: string) {
 	await write(outfile, xform.code);
 
 	try {
-		let min = await minify(xform.code, {
-			ecma: 2020,
-			mangle: true,
-			compress: true,
-			toplevel: true,
-			module: true,
+		let min = minify(outfile, xform.code, {
+			compress: {
+				dropConsole: true,
+			},
+			mangle: {
+				toplevel: true,
+			},
 		});
 
 		if (!min.code) throw 1;
@@ -146,19 +148,12 @@ await write(outfile, JSON.stringify(jsr, null, 2));
 outdir = resolve('build/npm');
 await reset(outdir);
 
-let pkg = await import('../package.json', {
-	with: {
-		type: 'json',
-	},
-});
-
-pkg.default.version = version;
 await write(
 	join(outdir, 'package.json'),
-	JSON.stringify(pkg.default, null, 2),
+	JSON.stringify(pkg, null, 2),
 );
 
 await copy('readme.md');
 await copy('license');
 
-await transform('src/index.ts');
+await translate('src/index.ts');

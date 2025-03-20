@@ -1,7 +1,7 @@
 {
 	"name": "hrana",
 	"type": "module",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"repository": "lukeed/hrana",
 	"description": "A tiny (1055b) runtime-agnostic Hrana HTTP client",
 	"module": "index.mjs",

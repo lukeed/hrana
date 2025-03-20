@@ -6,7 +6,7 @@ on:
     - cron: '0 0 * * *' # every UTC midnight
 
 env:
-  DENO_VERSION: 2.1
+  DENO_VERSION: 2.2
 
 jobs:
   spec:

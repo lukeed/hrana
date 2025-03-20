@@ -1,8 +1,7 @@
 {
 	"tasks": {
 		"spec": "deno run -A scripts/spec.ts",
-		"build": "deno run -A scripts/build.ts",
-		"release": "deno run -A scripts/release.ts"
+		"build": "deno run -A scripts/build.ts"
 	},
 	"lint": {
 		"rules": {

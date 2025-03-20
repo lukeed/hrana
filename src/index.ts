@@ -230,6 +230,9 @@ export namespace Hrana {
 		steps: Array<BatchStep>;
 	};
 
+	/**
+	 * An individual Hrana batch step structure.
+	 */
 	export type BatchStep = {
 		stmt: Stmt;
 		condition?: BatchCond | null;

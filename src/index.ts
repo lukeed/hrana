@@ -1,3 +1,6 @@
+/**
+ * The native Hrana types.
+ */
 export namespace Hrana {
 	type uint32 = number;
 	type uint64 = number;
@@ -13,6 +16,9 @@ export namespace Hrana {
 		| Value.Blob
 		| Value.Null;
 
+	/**
+	 * The {@link Hrana.Value} sub-types.
+	 */
 	export namespace Value {
 		/**
 		 * The parsed value JS type(s) that {@link parse} and/or {@link decode} will return.
@@ -80,22 +86,35 @@ export namespace Hrana {
 		}>;
 	};
 
+	/**
+	 * An Hrana `StreamRequest` structure.
+	 */
 	export type StreamRequest =
 		| CloseStreamReq
 		| ExecuteStreamReq
 		| BatchStreamReq;
 
+	/**
+	 * An Hrana `StreamResponse` structure.
+	 */
 	export type StreamResponse =
 		| CloseStreamResp
 		| ExecuteStreamResp
 		| BatchStreamResp;
 
-	// https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#execute-a-pipeline-of-requests-json
+	/**
+	 * An Hrana `PipelineReqBody` structure.
+	 * @see https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#execute-a-pipeline-of-requests-json
+	 */
 	export type PipelineReqBody = {
 		baton: string | null;
 		requests: Array<StreamRequest>;
 	};
 
+	/**
+	 * An Hrana `PipelineRespBody` structure.
+	 * @see https://github.com/tursodatabase/libsql/blob/main/docs/HRANA_3_SPEC.md#execute-a-pipeline-of-requests-json
+	 */
 	export type PipelineRespBody<T extends StreamResponse> = {
 		baton: string | null;
 		base_url: string | null;
@@ -105,39 +124,79 @@ export namespace Hrana {
 		>;
 	};
 
+	/**
+	 * An Hrana `CloseStreamReq` structure.
+	 *
+	 * The close request closes the stream.
+	 */
 	type CloseStreamReq = {
 		type: 'close';
 	};
 
+	/**
+	 * An Hrana `CloseStreamResp` structure.
+	 *
+	 * The response from closing a stream.
+	 */
 	type CloseStreamResp = {
 		type: 'close';
 	};
 
+	/**
+	 * An Hrana `StreamResultOk` structure.
+	 *
+	 * Successfully executed a pipeline of requests.
+	 */
 	type StreamResultOk<T extends StreamResponse> = {
 		type: 'ok';
 		response: T;
 	};
 
+	/**
+	 * An Hrana `StreamResultError` structure.
+	 *
+	 * An error occurred while executing a pipeline of requests.
+	 */
 	type StreamResultError = {
 		type: 'error';
 		error: Error;
 	};
 
+	/**
+	 * An Hrana `BatchStreamReq` structure.
+	 *
+	 * The request to execute a batch of statements.
+	 */
 	export type BatchStreamReq = {
 		type: 'batch';
 		batch: Batch;
 	};
 
+	/**
+	 * An Hrana `BatchStreamResp` structure.
+	 *
+	 * The response from executing a batch of statements.
+	 */
 	export type BatchStreamResp = {
 		type: 'batch';
 		result: BatchResult;
 	};
 
+	/**
+	 * An Hrana `ExecuteStreamReq` structure.
+	 *
+	 * The request to execute a statement.
+	 */
 	export type ExecuteStreamReq = {
 		type: 'execute';
 		stmt: Stmt;
 	};
 
+	/**
+	 * An Hrana `ExecuteStreamResp` structure.
+	 *
+	 * The response from executing a statement.
+	 */
 	export type ExecuteStreamResp = {
 		type: 'execute';
 		result: StmtResult;
@@ -156,11 +215,17 @@ export namespace Hrana {
 		query_duration_ms: double;
 	};
 
+	/**
+	 * Hrana Column information.
+	 */
 	export type Col = {
 		name: string | null;
 		decltype: string | null;
 	};
 
+	/**
+	 * An Hrana batch structure.
+	 */
 	export type Batch = {
 		steps: Array<BatchStep>;
 	};
@@ -170,6 +235,9 @@ export namespace Hrana {
 		condition?: BatchCond | null;
 	};
 
+	/**
+	 * An Hrana batch condition structure.
+	 */
 	export type BatchCond =
 		| { type: 'ok'; step: uint32 }
 		| { type: 'error'; step: uint32 }
@@ -178,6 +246,9 @@ export namespace Hrana {
 		| { type: 'or'; conds: Array<BatchCond> }
 		| { type: 'is_autocommit' };
 
+	/**
+	 * The result of executing a batch.
+	 */
 	export type BatchResult = {
 		step_results: Array<StmtResult | null>;
 		step_errors: Array<Error | null>;

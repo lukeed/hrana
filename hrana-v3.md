@@ -574,7 +574,7 @@ The client communicates with the server by sending HTTP requests with a specifie
 
 #### Check support for version 3 (JSON)
 
-```
+```HTTP
 GET v3
 ```
 
@@ -583,7 +583,7 @@ response to this request.
 
 #### Check support for version 3 (Protobuf)
 
-```
+```text
 GET v3-protobuf
 ```
 
@@ -592,7 +592,7 @@ response to this request.
 
 #### Execute a pipeline of requests (JSON)
 
-```
+```HTTP
 POST v3/pipeline
 -> JSON: PipelineReqBody
 <- JSON: PipelineRespBody
@@ -649,7 +649,7 @@ the response. Result is either a success (`type` set to `"ok"`) or an error (`ty
 
 #### Execute a pipeline of requests (Protobuf)
 
-```
+```text
 POST v3-protobuf/pipeline
 -> Protobuf: PipelineReqBody
 <- Protobuf: PipelineRespBody
@@ -660,7 +660,7 @@ response body using Protobuf.
 
 #### Execute a batch using a cursor (JSON)
 
-```
+```HTTP
 POST v3/cursor
 -> JSON: CursorReqBody
 <- line of JSON: CursorRespBody
@@ -691,7 +691,7 @@ meaning as in the `v3/pipeline` endpoint.
 
 #### Execute a batch using a cursor (Protobuf)
 
-```
+```text
 POST v3-protobuf/cursor
 -> Protobuf: CursorReqBody
 <- length-delimited Protobuf: CursorRespBody
@@ -701,7 +701,7 @@ POST v3-protobuf/cursor
 The `v3-protobuf/cursor` endpoint is the same as `v3/cursor` endpoint, but the request and response
 are encoded using Protobuf.
 
-In the response body, the structures are prefixed with a length delimiter: a Protobuf varint that
+In the response body, the structures are prefixed with a length delimiter: a Protobuf variant that
 encodes the length of the structure. The first structure is `CursorRespBody`, followed by an
 arbitrary number of `CursorEntry` structures.
 
@@ -982,7 +982,7 @@ undefined.
 is a 64-bit signed integer encoded as a string in JSON. For other statements, the value is
 undefined.
 
-> This structure was introduced in Hrana 1. The `decltype` field in the `Col` strucure was added in
+> This structure was introduced in Hrana 1. The `decltype` field in the `Col` structure was added in
 > Hrana 2.
 
 ### Batches
@@ -1088,7 +1088,7 @@ type RowEntry = {
 At the beginning of every batch step that is executed, the server produces a `step_begin` entry.
 This entry specifies the index of the step (which refers to the `steps` array in the `Batch`
 structure). The server sends entries for steps in the order in which they are executed. If a step is
-skipped (because its condition evalated to false), the server does not send any entry for it.
+skipped (because its condition evaluated to false), the server does not send any entry for it.
 
 After a `step_begin` entry, the server sends an arbitrary number of `row` entries that encode the
 individual rows produced by the statement, terminated by the `step_end` entry. Together, these

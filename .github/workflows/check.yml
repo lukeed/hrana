@@ -25,7 +25,6 @@ jobs:
         env:
           FILE: hrana-v3.md
         run: |
-          deno fmt $FILE
           if git diff --name-only --exit-code $FILE; then
             echo "-> spec is up to date!"
           else

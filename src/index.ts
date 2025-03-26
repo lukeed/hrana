@@ -524,10 +524,6 @@ export function parse<T extends Row = Row>(
 
 			if (c.name) {
 				v = tmp[k];
-				if (c.decltype) {
-					v.type = c.decltype.toLowerCase() as Hrana.Value['type'];
-				}
-
 				row[c.name] = decode(v, mode);
 				if (tx[c.name]) {
 					row[c.name] = tx[c.name]!(row[c.name] as Hrana.Value.Decoded);
